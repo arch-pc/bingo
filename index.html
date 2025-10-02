@@ -369,7 +369,7 @@
       
       /**
        * GRID GENERATION with backtracking
-       * Ensures 5 of each color and max 2 per row
+       * Ensures 5 of each color and max 2 per row, column, AND diagonal
        */
       function generateValidGrid() {
         const colorPool = [];
@@ -377,39 +377,65 @@
           for (let i = 0; i < GRID_SIZE; i++) colorPool.push(c);
         });
         
-        const grid = [];
+        const grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
         
-        function backtrack(row, col, remaining) {
+        function isValidPlacement(row, col, color) {
+          // Check row constraint
+          let rowCount = 0;
+          for (let c = 0; c < GRID_SIZE; c++) {
+            if (grid[row][c] === color) rowCount++;
+          }
+          if (rowCount >= MAX_SAME_COLOR_PER_ROW) return false;
+          
+          // Check column constraint
+          let colCount = 0;
+          for (let r = 0; r < GRID_SIZE; r++) {
+            if (grid[r][col] === color) colCount++;
+          }
+          if (colCount >= MAX_SAME_COLOR_PER_ROW) return false;
+          
+          // Check main diagonal (if cell is on it)
+          if (row === col) {
+            let diagCount = 0;
+            for (let i = 0; i < GRID_SIZE; i++) {
+              if (grid[i][i] === color) diagCount++;
+            }
+            if (diagCount >= MAX_SAME_COLOR_PER_ROW) return false;
+          }
+          
+          // Check anti-diagonal (if cell is on it)
+          if (row + col === GRID_SIZE - 1) {
+            let antiDiagCount = 0;
+            for (let i = 0; i < GRID_SIZE; i++) {
+              if (grid[i][GRID_SIZE - 1 - i] === color) antiDiagCount++;
+            }
+            if (antiDiagCount >= MAX_SAME_COLOR_PER_ROW) return false;
+          }
+          
+          return true;
+        }
+        
+        function backtrack(position, remaining) {
           // Success: filled all cells
-          if (row === GRID_SIZE) {
+          if (position === GRID_SIZE * GRID_SIZE) {
             return remaining.length === 0;
           }
           
-          // Move to next row
-          if (col === GRID_SIZE) {
-            return backtrack(row + 1, 0, remaining);
-          }
+          const row = Math.floor(position / GRID_SIZE);
+          const col = position % GRID_SIZE;
           
-          // Count colors in current row
-          const rowCounts = {};
-          for (let c = 0; c < col; c++) {
-            const color = grid[row][c];
-            rowCounts[color] = (rowCounts[color] || 0) + 1;
-          }
-          
-          // Try each available color
+          // Try each available color in random order
           const shuffled = [...remaining].sort(() => Math.random() - 0.5);
           
           for (let i = 0; i < shuffled.length; i++) {
             const color = shuffled[i];
             
-            // Check constraint: max 2 per row
-            if ((rowCounts[color] || 0) >= MAX_SAME_COLOR_PER_ROW) {
+            // Check all constraints
+            if (!isValidPlacement(row, col, color)) {
               continue;
             }
             
             // Place color
-            if (!grid[row]) grid[row] = [];
             grid[row][col] = color;
             
             // Remove from pool
@@ -418,17 +444,29 @@
             newRemaining.splice(idx, 1);
             
             // Recurse
-            if (backtrack(row, col + 1, newRemaining)) {
+            if (backtrack(position + 1, newRemaining)) {
               return true;
             }
+            
+            // Backtrack
+            grid[row][col] = null;
           }
           
-          // Backtrack
-          if (grid[row]) grid[row][col] = null;
           return false;
         }
         
-        backtrack(0, 0, colorPool);
+        // Try to generate valid grid (with retry limit for safety)
+        let attempts = 0;
+        while (attempts < 100) {
+          grid.forEach(row => row.fill(null));
+          if (backtrack(0, colorPool)) {
+            return grid;
+          }
+          attempts++;
+        }
+        
+        // Fallback: should rarely happen with proper backtracking
+        console.warn('Grid generation took many attempts, using fallback');
         return grid;
       }
       
