@@ -2,130 +2,131 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Hitster Bingo</title>
   <style>
     /*
-    HITSTER BINGO - Single File Web App
-    
-    Features:
-    - 5×5 grid with 5 colors (each exactly 5 times)
-    - Max 2 of same color per row constraint
-    - Click cells to toggle X mark
-    - Bingo detection (rows, cols, diagonals)
-    - Large answer field with fullscreen mode
-    - Optional drawing canvas
-    - LocalStorage persistence (keys: hb:grid, hb:marks, hb:answer, hb:draw, hb:version)
-    
-    Note: In Claude.ai artifacts, localStorage is NOT supported. 
-    Copy this file to use locally with full persistence.
+    HITSTER BINGO - Dark Mode & IBM Palette edition
     */
     
     :root {
-      --color-sky: #87CEEB;
-      --color-green: #2ECC71;
-      --color-purple: #6A0DAD;
-      --color-pink: #FF69B4;
-      --color-yellow: #FFD700;
+      /* Theme Colors matching Music Bingo */
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
+      --text-main: #ffffff;
+      --text-muted: #b3b3b3;
+      --spotify-green: #1db954;
+      --accent-blue: #2e77d0;
+      --accent-red: #e74c3c;
+
+      /* IBM Color Blind Safe Palette */
+      --c-blue:   #648FFF;
+      --c-purple: #785EF0;
+      --c-pink:   #DC267F;
+      --c-orange: #FE6100;
+      --c-gold:   #FFB000;
+
       --cell-size: min(18vw, 70px);
-      --gap: 4px;
+      --gap: 6px;
     }
     
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
     
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
       min-height: 100vh;
-      padding: 8px;
+      padding: 10px;
       touch-action: manipulation;
     }
     
+    /* Header & Controls */
     .header {
-      background: white;
-      padding: 12px;
+      background: var(--card-bg);
+      padding: 15px;
       border-radius: 12px;
-      margin-bottom: 12px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      margin-bottom: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
       position: sticky;
-      top: 8px;
+      top: 0;
       z-index: 100;
+      text-align: center;
     }
     
     .header h1 {
-      font-size: 24px;
-      color: #333;
-      margin-bottom: 8px;
-      text-align: center;
+      font-size: 1.5rem;
+      color: var(--text-main);
+      margin-bottom: 15px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 10px;
     }
     
     .controls {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       flex-wrap: wrap;
       justify-content: center;
     }
     
     button {
-      padding: 10px 16px;
+      padding: 10px 20px;
       font-size: 14px;
-      font-weight: 600;
+      font-weight: bold;
       border: none;
-      border-radius: 8px;
-      background: #667eea;
-      color: white;
+      border-radius: 20px;
       cursor: pointer;
-      min-width: 44px;
       min-height: 44px;
-      transition: all 0.2s;
-      touch-action: manipulation;
+      transition: transform 0.1s;
+      color: white;
     }
     
-    button:hover {
-      background: #5568d3;
-      transform: translateY(-1px);
-    }
+    button:active { transform: scale(0.95); }
+
+    #resetBtn { background-color: #444; }
+    #fullscreenBtn { background-color: var(--accent-blue); }
+    #drawToggleBtn { background-color: var(--spotify-green); }
     
-    button:active {
-      transform: translateY(0);
-    }
-    
+    /* Bingo Badge */
     .bingo-badge {
       display: none;
-      background: #FFD700;
-      color: #333;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-weight: bold;
+      background: var(--c-gold);
+      color: #000;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-weight: 900;
+      text-transform: uppercase;
       animation: pulse 1s infinite;
+      margin-top: 10px;
+      width: 100%;
     }
     
-    .bingo-badge.active {
-      display: inline-block;
-    }
+    .bingo-badge.active { display: block; }
     
     @keyframes pulse {
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.05); }
     }
     
+    /* The Grid */
     .grid-container {
-      background: white;
-      padding: 12px;
+      background: var(--card-bg);
+      padding: 15px;
       border-radius: 12px;
-      margin-bottom: 12px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      margin-bottom: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
     
     .grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
       gap: var(--gap);
-      max-width: 400px;
+      max-width: 450px;
       margin: 0 auto;
     }
     
@@ -134,52 +135,47 @@
       border-radius: 8px;
       position: relative;
       cursor: pointer;
-      transition: transform 0.1s;
-      min-width: 44px;
-      min-height: 44px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 32px;
+      font-size: 40px; /* Big X */
       font-weight: bold;
-      color: rgba(0,0,0,0.8);
-      text-shadow: 0 0 3px white, 0 0 5px white;
+      color: white;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
       user-select: none;
-      -webkit-tap-highlight-color: transparent;
+      border: 2px solid transparent;
+      transition: transform 0.1s;
     }
     
-    .cell:hover {
-      transform: scale(1.05);
-    }
-    
-    .cell:active {
-      transform: scale(0.95);
-    }
+    .cell:active { transform: scale(0.9); }
     
     .cell.marked::after {
       content: '✕';
     }
     
+    /* Answer Field */
     .answer-section {
-      background: white;
-      padding: 12px;
+      background: var(--card-bg);
+      padding: 15px;
       border-radius: 12px;
-      margin-bottom: 12px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      margin-bottom: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
     
     .answer-section h2 {
-      font-size: 18px;
-      margin-bottom: 8px;
-      color: #333;
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+      color: var(--text-muted);
     }
     
     textarea {
       width: 100%;
-      min-height: 100px;
-      padding: 12px;
-      font-size: 18px;
-      border: 2px solid #ddd;
+      min-height: 120px;
+      padding: 15px;
+      font-size: 1.2rem;
+      background-color: #121212;
+      color: white;
+      border: 1px solid #333;
       border-radius: 8px;
       resize: vertical;
       font-family: inherit;
@@ -187,34 +183,33 @@
     
     textarea:focus {
       outline: none;
-      border-color: #667eea;
+      border-color: var(--spotify-green);
     }
     
+    /* Drawing Section */
     .draw-section {
-      background: white;
-      padding: 12px;
+      background: var(--card-bg);
+      padding: 15px;
       border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
       display: none;
+      margin-bottom: 40px;
     }
     
-    .draw-section.active {
-      display: block;
-    }
+    .draw-section.active { display: block; }
     
     .draw-section h2 {
-      font-size: 18px;
-      margin-bottom: 8px;
-      color: #333;
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+      color: var(--text-muted);
     }
     
     .canvas-container {
-      position: relative;
-      background: #f9f9f9;
-      border: 2px solid #ddd;
+      background: white; /* Canvas remains white for drawing contrast */
       border-radius: 8px;
       overflow: hidden;
       touch-action: none;
+      margin-bottom: 10px;
     }
     
     canvas {
@@ -223,85 +218,66 @@
       cursor: crosshair;
     }
     
-    .canvas-controls {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
+    #clearCanvasBtn {
+      background-color: var(--accent-red);
+      width: 100%;
     }
     
+    /* Fullscreen Overlay */
     .fullscreen-overlay {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.95);
       z-index: 1000;
       padding: 20px;
-      overflow: auto;
-    }
-    
-    .fullscreen-overlay.active {
-      display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
     }
     
+    .fullscreen-overlay.active { display: flex; }
+    
     .fullscreen-content {
       color: white;
-      font-size: 48px;
+      font-size: clamp(2rem, 5vw, 4rem); /* Responsive font size */
       font-weight: bold;
       text-align: center;
       line-height: 1.4;
-      word-wrap: break-word;
-      max-width: 90vw;
+      max-width: 95vw;
     }
     
     .close-fullscreen {
       position: absolute;
-      top: 20px;
-      right: 20px;
-      font-size: 36px;
+      top: 20px; right: 20px;
+      font-size: 40px;
       background: none;
-      color: white;
+      color: var(--text-muted);
       border: none;
-      cursor: pointer;
       padding: 10px;
-      min-width: 60px;
-      min-height: 60px;
     }
     
-    /* Confetti animation */
+    /* Confetti */
     .confetti {
       position: fixed;
-      width: 10px;
-      height: 10px;
-      background: #FFD700;
-      position: fixed;
-      top: -10px;
-      z-index: 999;
+      width: 12px; height: 12px;
+      top: -20px; z-index: 999;
       animation: confetti-fall 3s linear forwards;
     }
     
     @keyframes confetti-fall {
-      to {
-        transform: translateY(100vh) rotate(360deg);
-        opacity: 0;
-      }
+      to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
     }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>🎵 Hitster Bingo 🎵</h1>
+    <h1>🎵 Hitster Bingo</h1>
     <div class="controls">
-      <button id="resetBtn" aria-label="Reset spel">🔄 Reset</button>
-      <button id="fullscreenBtn" aria-label="Vergroot antwoord">🔍 Vergroot</button>
-      <button id="drawToggleBtn" aria-label="Teken modus">✏️ Tekenen</button>
-      <div class="bingo-badge" id="bingoBadge">🎉 BINGO! 🎉</div>
+      <button id="resetBtn">🔄 Reset</button>
+      <button id="fullscreenBtn">🔍 Groot</button>
+      <button id="drawToggleBtn">✏️ Tekenen</button>
     </div>
+    <div class="bingo-badge" id="bingoBadge">🎉 BINGO! 🎉</div>
   </div>
   
   <div class="grid-container">
@@ -309,22 +285,20 @@
   </div>
   
   <div class="answer-section">
-    <h2>Antwoord:</h2>
-    <textarea id="answerField" placeholder="Typ hier je antwoord..." aria-label="Antwoordveld"></textarea>
+    <h2>Jouw Antwoord:</h2>
+    <textarea id="answerField" placeholder="Typ hier de artiest / titel..."></textarea>
   </div>
   
   <div class="draw-section" id="drawSection">
-    <h2>Tekening:</h2>
+    <h2>Tekenbord:</h2>
     <div class="canvas-container">
       <canvas id="drawCanvas" width="400" height="300"></canvas>
     </div>
-    <div class="canvas-controls">
-      <button id="clearCanvasBtn" aria-label="Wis tekening">🗑️ Wissen</button>
-    </div>
+    <button id="clearCanvasBtn">🗑️ Tekening Wissen</button>
   </div>
   
   <div class="fullscreen-overlay" id="fullscreenOverlay">
-    <button class="close-fullscreen" id="closeFullscreenBtn" aria-label="Sluit fullscreen">✕</button>
+    <button class="close-fullscreen" id="closeFullscreenBtn">✕</button>
     <div class="fullscreen-content" id="fullscreenContent"></div>
   </div>
 
@@ -332,22 +306,29 @@
     (() => {
       'use strict';
       
-      // Configuration
-      const COLORS = ['#87CEEB', '#2ECC71', '#6A0DAD', '#FF69B4', '#FFD700'];
+      // Configuration - IBM Color Blind Safe Palette matching the other app
+      const COLORS = [
+        '#648FFF', // Blue
+        '#785EF0', // Purple
+        '#DC267F', // Pink
+        '#FE6100', // Orange
+        '#FFB000'  // Gold
+      ];
+      
       const GRID_SIZE = 5;
       const MAX_SAME_COLOR_PER_ROW = 2;
-      const BINGO_LINES = ['rows', 'cols', 'diagonals']; // Configure which lines count
-      const STORAGE_PREFIX = 'hb:';
-      const DEBOUNCE_MS = 150;
+      const BINGO_LINES = ['rows', 'cols', 'diagonals']; 
+      const STORAGE_PREFIX = 'hb_dark:'; // Changed prefix to avoid conflicts
+      const DEBOUNCE_MS = 200;
       
-      // State - Note: localStorage not available in Claude.ai artifacts
+      // State
       let gridColors = [];
       let marks = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(false));
       let answerText = '';
       let canvasDataURL = null;
       let hasBingo = false;
       
-      // Canvas drawing state
+      // Canvas state
       let isDrawing = false;
       let lastX = 0;
       let lastY = 0;
@@ -362,15 +343,12 @@
       const fullscreenOverlay = document.getElementById('fullscreenOverlay');
       const fullscreenContent = document.getElementById('fullscreenContent');
       
-      // Initialize canvas
-      ctx.lineWidth = 3;
+      // Init Canvas style
+      ctx.lineWidth = 4;
       ctx.lineCap = 'round';
-      ctx.strokeStyle = '#333';
+      ctx.strokeStyle = '#000000';
       
-      /**
-       * GRID GENERATION with backtracking
-       * Ensures 5 of each color and max 2 per row, column, AND diagonal
-       */
+      // --- LOGIC: Grid Generation ---
       function generateValidGrid() {
         const colorPool = [];
         COLORS.forEach(c => {
@@ -380,35 +358,25 @@
         const grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
         
         function isValidPlacement(row, col, color) {
-          // Check row constraint
+          // Row constraint
           let rowCount = 0;
-          for (let c = 0; c < GRID_SIZE; c++) {
-            if (grid[row][c] === color) rowCount++;
-          }
+          for (let c = 0; c < GRID_SIZE; c++) if (grid[row][c] === color) rowCount++;
           if (rowCount >= MAX_SAME_COLOR_PER_ROW) return false;
           
-          // Check column constraint
+          // Column constraint
           let colCount = 0;
-          for (let r = 0; r < GRID_SIZE; r++) {
-            if (grid[r][col] === color) colCount++;
-          }
+          for (let r = 0; r < GRID_SIZE; r++) if (grid[r][col] === color) colCount++;
           if (colCount >= MAX_SAME_COLOR_PER_ROW) return false;
           
-          // Check main diagonal (if cell is on it)
+          // Diagonals constraint
           if (row === col) {
             let diagCount = 0;
-            for (let i = 0; i < GRID_SIZE; i++) {
-              if (grid[i][i] === color) diagCount++;
-            }
+            for (let i = 0; i < GRID_SIZE; i++) if (grid[i][i] === color) diagCount++;
             if (diagCount >= MAX_SAME_COLOR_PER_ROW) return false;
           }
-          
-          // Check anti-diagonal (if cell is on it)
           if (row + col === GRID_SIZE - 1) {
             let antiDiagCount = 0;
-            for (let i = 0; i < GRID_SIZE; i++) {
-              if (grid[i][GRID_SIZE - 1 - i] === color) antiDiagCount++;
-            }
+            for (let i = 0; i < GRID_SIZE; i++) if (grid[i][GRID_SIZE - 1 - i] === color) antiDiagCount++;
             if (antiDiagCount >= MAX_SAME_COLOR_PER_ROW) return false;
           }
           
@@ -416,104 +384,57 @@
         }
         
         function backtrack(position, remaining) {
-          // Success: filled all cells
-          if (position === GRID_SIZE * GRID_SIZE) {
-            return remaining.length === 0;
-          }
+          if (position === GRID_SIZE * GRID_SIZE) return remaining.length === 0;
           
           const row = Math.floor(position / GRID_SIZE);
           const col = position % GRID_SIZE;
-          
-          // Try each available color in random order
           const shuffled = [...remaining].sort(() => Math.random() - 0.5);
           
           for (let i = 0; i < shuffled.length; i++) {
             const color = shuffled[i];
+            if (!isValidPlacement(row, col, color)) continue;
             
-            // Check all constraints
-            if (!isValidPlacement(row, col, color)) {
-              continue;
-            }
-            
-            // Place color
             grid[row][col] = color;
-            
-            // Remove from pool
             const newRemaining = [...remaining];
-            const idx = newRemaining.indexOf(color);
-            newRemaining.splice(idx, 1);
+            newRemaining.splice(newRemaining.indexOf(color), 1);
             
-            // Recurse
-            if (backtrack(position + 1, newRemaining)) {
-              return true;
-            }
-            
-            // Backtrack
+            if (backtrack(position + 1, newRemaining)) return true;
             grid[row][col] = null;
           }
-          
           return false;
         }
         
-        // Try to generate valid grid (with retry limit for safety)
         let attempts = 0;
         while (attempts < 100) {
           grid.forEach(row => row.fill(null));
-          if (backtrack(0, colorPool)) {
-            return grid;
-          }
+          if (backtrack(0, colorPool)) return grid;
           attempts++;
         }
-        
-        // Fallback: should rarely happen with proper backtracking
-        console.warn('Grid generation took many attempts, using fallback');
-        return grid;
+        return grid; 
       }
       
-      /**
-       * BINGO DETECTION
-       * Checks rows, columns, and diagonals
-       */
+      // --- LOGIC: Bingo Check ---
       function checkBingo() {
-        // Check rows
-        if (BINGO_LINES.includes('rows')) {
-          for (let r = 0; r < GRID_SIZE; r++) {
-            if (marks[r].every(m => m)) return true;
-          }
+        // Rows
+        for (let r = 0; r < GRID_SIZE; r++) {
+          if (marks[r].every(m => m)) return true;
         }
-        
-        // Check columns
-        if (BINGO_LINES.includes('cols')) {
-          for (let c = 0; c < GRID_SIZE; c++) {
-            if (marks.every(row => row[c])) return true;
-          }
+        // Cols
+        for (let c = 0; c < GRID_SIZE; c++) {
+          if (marks.every(row => row[c])) return true;
         }
-        
-        // Check diagonals
-        if (BINGO_LINES.includes('diagonals')) {
-          // Main diagonal
-          let mainDiag = true;
-          for (let i = 0; i < GRID_SIZE; i++) {
-            if (!marks[i][i]) mainDiag = false;
-          }
-          if (mainDiag) return true;
-          
-          // Anti diagonal
-          let antiDiag = true;
-          for (let i = 0; i < GRID_SIZE; i++) {
-            if (!marks[i][GRID_SIZE - 1 - i]) antiDiag = false;
-          }
-          if (antiDiag) return true;
+        // Diagonals
+        let mainDiag = true, antiDiag = true;
+        for (let i = 0; i < GRID_SIZE; i++) {
+          if (!marks[i][i]) mainDiag = false;
+          if (!marks[i][GRID_SIZE - 1 - i]) antiDiag = false;
         }
-        
-        return false;
+        return mainDiag || antiDiag;
       }
       
-      /**
-       * CONFETTI ANIMATION
-       */
+      // --- VISUALS: Confetti ---
       function showConfetti() {
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < 60; i++) {
           setTimeout(() => {
             const confetti = document.createElement('div');
             confetti.className = 'confetti';
@@ -522,93 +443,69 @@
             confetti.style.animationDelay = Math.random() * 0.5 + 's';
             confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
             document.body.appendChild(confetti);
-            
-            setTimeout(() => confetti.remove(), 3500);
-          }, i * 30);
+            setTimeout(() => confetti.remove(), 4000);
+          }, i * 20);
         }
       }
       
-      /**
-       * RENDER GRID
-       */
+      // --- UI: Render ---
       function renderGrid() {
         gridEl.innerHTML = '';
-        
         for (let r = 0; r < GRID_SIZE; r++) {
           for (let c = 0; c < GRID_SIZE; c++) {
             const cell = document.createElement('div');
             cell.className = 'cell';
-            cell.style.background = gridColors[r][c];
-            cell.tabIndex = 0;
-            cell.setAttribute('aria-label', `Cel ${r + 1}-${c + 1}`);
+            cell.style.backgroundColor = gridColors[r][c];
             
-            if (marks[r][c]) {
-              cell.classList.add('marked');
-            }
+            if (marks[r][c]) cell.classList.add('marked');
             
-            cell.addEventListener('click', () => toggleCell(r, c));
-            cell.addEventListener('keydown', (e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                toggleCell(r, c);
+            cell.addEventListener('click', () => {
+              marks[r][c] = !marks[r][c];
+              renderGrid();
+              const isNowBingo = checkBingo();
+              
+              if (isNowBingo && !hasBingo) {
+                showConfetti();
+                bingoBadge.classList.add('active');
+              } else if (!isNowBingo) {
+                bingoBadge.classList.remove('active');
               }
+              hasBingo = isNowBingo;
+              saveState();
             });
-            
             gridEl.appendChild(cell);
           }
         }
       }
       
-      /**
-       * TOGGLE CELL
-       */
-      function toggleCell(row, col) {
-        marks[row][col] = !marks[row][col];
-        renderGrid();
-        
-        const wasBingo = hasBingo;
-        hasBingo = checkBingo();
-        
-        if (hasBingo && !wasBingo) {
-          showConfetti();
-          bingoBadge.classList.add('active');
-        } else if (!hasBingo) {
-          bingoBadge.classList.remove('active');
-        }
-        
-        saveState();
-      }
-      
-      /**
-       * PERSISTENCE (simulated - localStorage not available in Claude.ai)
-       */
+      // --- STORAGE ---
       let saveTimeout;
       function saveState() {
         clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
-          // In real environment: localStorage.setItem(STORAGE_PREFIX + 'grid', JSON.stringify(gridColors));
-          // In real environment: localStorage.setItem(STORAGE_PREFIX + 'marks', JSON.stringify(marks));
-          // In real environment: localStorage.setItem(STORAGE_PREFIX + 'answer', answerText);
-          // In real environment: localStorage.setItem(STORAGE_PREFIX + 'draw', canvasDataURL || '');
-          // In real environment: localStorage.setItem(STORAGE_PREFIX + 'version', '1.0');
+          try {
+            localStorage.setItem(STORAGE_PREFIX + 'grid', JSON.stringify(gridColors));
+            localStorage.setItem(STORAGE_PREFIX + 'marks', JSON.stringify(marks));
+            localStorage.setItem(STORAGE_PREFIX + 'answer', answerText);
+            if (canvasDataURL) localStorage.setItem(STORAGE_PREFIX + 'draw', canvasDataURL);
+          } catch(e) {}
         }, DEBOUNCE_MS);
       }
       
       function loadState() {
         try {
-          // In real environment: const savedGrid = localStorage.getItem(STORAGE_PREFIX + 'grid');
-          // In real environment: const savedMarks = localStorage.getItem(STORAGE_PREFIX + 'marks');
-          // In real environment: const savedAnswer = localStorage.getItem(STORAGE_PREFIX + 'answer');
-          // In real environment: const savedDraw = localStorage.getItem(STORAGE_PREFIX + 'draw');
-          
-          // Placeholder for Claude.ai (no localStorage available)
-          const savedGrid = null;
+          const savedGrid = localStorage.getItem(STORAGE_PREFIX + 'grid');
+          const savedMarks = localStorage.getItem(STORAGE_PREFIX + 'marks');
+          const savedAnswer = localStorage.getItem(STORAGE_PREFIX + 'answer');
+          const savedDraw = localStorage.getItem(STORAGE_PREFIX + 'draw');
           
           if (savedGrid) {
-            // gridColors = JSON.parse(savedGrid);
-            // marks = JSON.parse(savedMarks);
-            // answerText = savedAnswer || '';
-            // canvasDataURL = savedDraw || null;
+            gridColors = JSON.parse(savedGrid);
+            marks = JSON.parse(savedMarks);
+            answerText = savedAnswer || '';
+            canvasDataURL = savedDraw || null;
+            hasBingo = checkBingo();
+            if(hasBingo) bingoBadge.classList.add('active');
           } else {
             gridColors = generateValidGrid();
           }
@@ -617,12 +514,8 @@
         }
       }
       
-      /**
-       * RESET
-       */
       function reset() {
-        if (!confirm('Weet je zeker dat je opnieuw wilt beginnen?')) return;
-        
+        if (!confirm('Start new game? This clears current progress.')) return;
         gridColors = generateValidGrid();
         marks = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(false));
         answerText = '';
@@ -632,53 +525,39 @@
         answerField.value = '';
         ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
         bingoBadge.classList.remove('active');
-        
+        localStorage.removeItem(STORAGE_PREFIX + 'draw'); // Clear specific draw key
         renderGrid();
         saveState();
       }
       
-      /**
-       * DRAWING
-       */
-      function startDrawing(e) {
-        isDrawing = true;
+      // --- DRAWING LOGIC ---
+      function getPos(e) {
         const rect = drawCanvas.getBoundingClientRect();
         const scaleX = drawCanvas.width / rect.width;
         const scaleY = drawCanvas.height / rect.height;
-        
-        if (e.touches) {
-          lastX = (e.touches[0].clientX - rect.left) * scaleX;
-          lastY = (e.touches[0].clientY - rect.top) * scaleY;
-        } else {
-          lastX = (e.clientX - rect.left) * scaleX;
-          lastY = (e.clientY - rect.top) * scaleY;
-        }
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+          x: (clientX - rect.left) * scaleX,
+          y: (clientY - rect.top) * scaleY
+        };
+      }
+
+      function startDrawing(e) {
+        isDrawing = true;
+        const pos = getPos(e);
+        lastX = pos.x; lastY = pos.y;
       }
       
       function draw(e) {
         if (!isDrawing) return;
         e.preventDefault();
-        
-        const rect = drawCanvas.getBoundingClientRect();
-        const scaleX = drawCanvas.width / rect.width;
-        const scaleY = drawCanvas.height / rect.height;
-        
-        let currentX, currentY;
-        if (e.touches) {
-          currentX = (e.touches[0].clientX - rect.left) * scaleX;
-          currentY = (e.touches[0].clientY - rect.top) * scaleY;
-        } else {
-          currentX = (e.clientX - rect.left) * scaleX;
-          currentY = (e.clientY - rect.top) * scaleY;
-        }
-        
+        const pos = getPos(e);
         ctx.beginPath();
         ctx.moveTo(lastX, lastY);
-        ctx.lineTo(currentX, currentY);
+        ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
-        
-        lastX = currentX;
-        lastY = currentY;
+        lastX = pos.x; lastY = pos.y;
       }
       
       function stopDrawing() {
@@ -689,12 +568,11 @@
         }
       }
       
-      // Canvas event listeners
+      // Listeners
       drawCanvas.addEventListener('mousedown', startDrawing);
       drawCanvas.addEventListener('mousemove', draw);
       drawCanvas.addEventListener('mouseup', stopDrawing);
       drawCanvas.addEventListener('mouseout', stopDrawing);
-      
       drawCanvas.addEventListener('touchstart', startDrawing);
       drawCanvas.addEventListener('touchmove', draw);
       drawCanvas.addEventListener('touchend', stopDrawing);
@@ -702,57 +580,37 @@
       document.getElementById('clearCanvasBtn').addEventListener('click', () => {
         ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
         canvasDataURL = null;
+        localStorage.removeItem(STORAGE_PREFIX + 'draw');
         saveState();
       });
       
-      /**
-       * EVENT LISTENERS
-       */
       document.getElementById('resetBtn').addEventListener('click', reset);
-      
       document.getElementById('fullscreenBtn').addEventListener('click', () => {
-        fullscreenContent.textContent = answerText || 'Geen antwoord ingevuld';
+        fullscreenContent.innerText = answerText || '(Leeg)';
         fullscreenOverlay.classList.add('active');
       });
-      
       document.getElementById('closeFullscreenBtn').addEventListener('click', () => {
         fullscreenOverlay.classList.remove('active');
       });
-      
       document.getElementById('drawToggleBtn').addEventListener('click', () => {
         drawSection.classList.toggle('active');
       });
-      
       answerField.addEventListener('input', () => {
         answerText = answerField.value;
         saveState();
       });
-      
-      // Close fullscreen on ESC
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && fullscreenOverlay.classList.contains('active')) {
-          fullscreenOverlay.classList.remove('active');
-        }
-      });
-      
-      /**
-       * INITIALIZE
-       */
+
+      // Init
       loadState();
       renderGrid();
       answerField.value = answerText;
-      
-      // Restore canvas if saved
       if (canvasDataURL) {
         const img = new Image();
         img.onload = () => ctx.drawImage(img, 0, 0);
         img.src = canvasDataURL;
       }
-      
-      console.log('✅ Hitster Bingo geladen!');
-      console.log('ℹ️ Let op: localStorage werkt niet in Claude.ai artifacts.');
-      console.log('ℹ️ Kopieer deze code naar een lokaal HTML-bestand voor volledige functionaliteit.');
     })();
   </script>
 </body>
 </html>
+
