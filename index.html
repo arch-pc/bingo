@@ -20,7 +20,7 @@
       --accent-red: #e74c3c;
 
       /* IBM Color Blind Safe Palette */
-      --c-blue:   #648FFF;
+      --c-blue:   #33B3A6;
       --c-purple: #785EF0;
       --c-pink:   #DC267F;
       --c-orange: #FE6100;
@@ -112,38 +112,38 @@
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.05); }
     }
-/* De container waar het grid in zit krijgt nu de witte achtergrond */
+    
+    /* The Grid */
     .grid-container {
-      background: #ffffff; /* Wit vlak achter het hele veld */
+      background: var(--card-bg);
       padding: 15px;
       border-radius: 12px;
       margin-bottom: 15px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
     
     .grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: var(--gap); /* De gap laat nu de witte achtergrond doorschijnen */
+      gap: var(--gap);
       max-width: 450px;
       margin: 0 auto;
     }
     
     .cell {
       aspect-ratio: 1 / 1;
-      border-radius: 4px; /* Iets minder rond voor een strakker effect op wit */
+      border-radius: 8px;
       position: relative;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 40px;
+      font-size: 40px; /* Big X */
       font-weight: bold;
       color: white;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
       user-select: none;
-      /* Geen border meer nodig om de cell zelf, de achtergrond doet het werk */
-      border: none; 
+      border: 2px solid transparent;
       transition: transform 0.1s;
     }
     
@@ -613,4 +613,3 @@
   </script>
 </body>
 </html>
-
